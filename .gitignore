@@ -1,0 +1,6 @@
+.DS_STORE
+.phpintel/
+.env
+*.lock
+*.log
+/cache/
