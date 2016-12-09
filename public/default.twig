@@ -1,19 +1,15 @@
 <html>
 <head>
-	{{pg['hd1']}}
-	{{pg['hd2']}}
-	{{pg['hd3']}}
+	{{pg['head1']}}
+	{{pg['head2']}}
+	{{pg['head3']}}
 </head>
 <body>
-	{{pg['bt1']}}
-	{{pg['bt2']}}
-	{{pg['desc']}}
-	{{pg['bb1']}}
-	{{pg['bb2']}}
-	<ul>
-	 {% for c in pg.Contents %}
-        <li>{{ c.Description | raw }}</li>
-    {% endfor %}
+	{{pg['header1']}}
+	{{pg['header2']}}
+	{{pg['content']}}
+	{{pg['footer1']}}
+	{{pg['footer2']}}
 </ul>
 </body>
 </html>
