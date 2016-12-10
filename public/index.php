@@ -79,12 +79,18 @@ function currentPageUrl()
     return $pageURL;
 }
 
-$path           = trim(parse_url(currentPageUrl(), PHP_URL_PATH), "/");
-$pathComponents = [];
+function getCurrentPageName()
+{
+    $pageName = "Home Page";
+    $path     = trim(parse_url(currentPageUrl(), PHP_URL_PATH), "/");
 
-if (!empty($path)) {
-    $pathComponents = explode("/", $path);
+    if (!empty($path)) {
+        $pageName = join('-', $explode("/", $path));
+    }
+
+    return $pageName;
 }
+
 /****************************************************************
  * Functions
  ****************************************************************/
@@ -169,15 +175,15 @@ class MyUtil
      */
     public function getRequestWithCache($url, $ttl = 120)
     {
-        $key = hash('md5', $url);
-        /*$existingData = cache($key);
+        $key          = hash('md5', $url);
+        $existingData = cache($key);
         if (!is_null($existingData)) {
-        return $existingData;
-        }*/
+            return $existingData;
+        }
 
         $existingData = $this->httpRequest($url);
-        //return cache($key, $existingData, $ttl);
-        return $existingData;
+        return cache($key, $existingData, $ttl);
+        // return $existingData;
     }
 
     /**
@@ -308,12 +314,7 @@ $twig   = new \Twig_Environment($loader, array(
     'debug' => false,
 ));
 
-$pageName = "Home Page";
-if (count($pathComponents) > 0) {
-    // var_dump($pathComponents);
-    $pageName = join('-', $pathComponents);
-}
-
+$pageName   = getCurrentPageName();
 $cloudQuery = $config["cloudQuery"];
 $dataUrl    = str_replace("[pageName]", urlencode($pageName), $cloudQuery);
 $pageData   = $util->getRequestWithCache($dataUrl, $config["ttl"]);
