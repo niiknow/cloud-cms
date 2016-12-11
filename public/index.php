@@ -10,14 +10,6 @@ define('TIME_BEGIN', microtime(true));
 // Define path to application directory
 defined('APP_PATH')
 || define('APP_PATH', realpath(dirname(__FILE__) . '/../'));
-if (PHP_SAPI === 'cli-server') {
-    // To help the built-in PHP dev server, check if the request was actually for
-    // something which should probably be served as a static file
-    $file = __DIR__ . $_SERVER['REQUEST_URI'];
-    if (is_file($file)) {
-        return false;
-    }
-}
 $classLoader = require_once APP_PATH . '/vendor/autoload.php';
 
 /**
@@ -79,16 +71,33 @@ function currentPageUrl()
     return $pageURL;
 }
 
-function getCurrentPageName()
+function getCurrentPageNames()
 {
-    $pageName = "Home Page";
+    $pageName = ["Home Page"];
     $path     = trim(parse_url(currentPageUrl(), PHP_URL_PATH), "/");
 
     if (!empty($path)) {
-        $pageName = join('-', $explode("/", $path));
+        return explode("/", $path);
     }
 
     return $pageName;
+}
+
+function validatePageNames($pageNames, $util)
+{
+    if (count($pageNames) > 5) {
+        return false;
+    }
+
+    // add any other logic here such as your custom pages
+    // example healthcheck
+    if ($pageNames[0] == "healthcheck.txt") {
+        echo 'OK';
+        header("Content-Type: text/plain");
+        return false;
+    }
+
+    return true;
 }
 
 /****************************************************************
@@ -200,9 +209,7 @@ class MyUtil
         /**
          * Send response headers to browser
          */
-        sendHeaders($respheaders, true/*, function($h) {
-    return stripos($h, 'cookie:') !== false;
-    }*/);
+        $this->sendHeaders($respheaders, true);
 
         return $data;
     }
@@ -314,14 +321,29 @@ $twig   = new \Twig_Environment($loader, array(
     'debug' => false,
 ));
 
-$pageName   = getCurrentPageName();
+$pageNames = getCurrentPageNames();
+if (!validatePageNames($pageNames, $util)) {
+    // return 404
+    $pageNames = ["404"];
+}
+
+$pageName   = join("-", $pageNames);
 $cloudQuery = $config["cloudQuery"];
 $dataUrl    = str_replace("[pageName]", urlencode($pageName), $cloudQuery);
 $pageData   = $util->getRequestWithCache($dataUrl, $config["ttl"]);
 $pageModel  = $pageData;
 
-if (!empty($pageData) && preg_match("/[\{\]]+/i", $pageData)) {
+if (isset($pageData) && !empty($pageData) && preg_match("/[\{\]]+/i", $pageData)) {
     $pageModel = json_decode($pageData);
+} else {
+    if ($pageName == "404") {
+        http_response_code(500);
+        echo "Error 500: issue connecting to the database backend and/or not having a custom 404 page.";
+        return;
+    }
+
+    $util->sendRedirect("/404");
+    return;
 }
 
 /**
